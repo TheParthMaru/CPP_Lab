@@ -1,9 +1,15 @@
 #include "JumpList.h"
 #include <stdexcept>
+#include <iostream>
+using namespace std;
 
+// This is a constructor
 Node::Node(const string &s, Node *next, Node *jump, int gap)
 {
-    // IMPLEMENT ME
+    data_ = s;
+    next_ = next;
+    jump_ = jump;
+    gap_ = gap;
 }
 
 Node::~Node()
@@ -11,9 +17,11 @@ Node::~Node()
     // IMPLEMENT ME
 }
 
+// This will be the default constructor for the JumpList.
+// We know that the head will always be a jump node.
 JumpList::JumpList()
 {
-    // IMPLEMENT ME
+    head_ = nullptr;
 }
 
 // DO NOT CHANGE
@@ -73,9 +81,17 @@ JumpList::~JumpList()
 
 int JumpList::size() const
 {
-    // IMPLEMENT ME
+    int counter = 0;
 
-    return -1; // dummy
+    Node *currentNode = head_;
+
+    while (currentNode != nullptr)
+    {
+        ++counter;
+        currentNode = currentNode->next_;
+    }
+
+    return counter; // dummy
 }
 
 // DONE FOR YOU, DO NOT CHANGE
@@ -116,9 +132,16 @@ string JumpList::get(int i) const
 
 string JumpList::print() const
 {
-    // IMPLEMENT ME
+    string result = "";
+    Node *currentNode = head_;
 
-    return "nah"; // dummy
+    while (currentNode != nullptr)
+    {
+        result += currentNode->data_ + " ";
+        currentNode = currentNode->next_;
+    }
+
+    return result;
 }
 
 string JumpList::prettyPrint() const
@@ -130,7 +153,36 @@ string JumpList::prettyPrint() const
 
 bool JumpList::insert(const string &s)
 {
-    // IMPLEMENT ME
+    Node *newNode = new Node(s, nullptr, nullptr, 0);
+
+    // If empty list, then we need to insert at head.
+    if (head_ == nullptr)
+    {
+        head_ = newNode;
+        std::cout << "Data: " << s << " inserted" << std::endl;
+        return true; // Because we were able to add.
+    }
+
+    // Checking if the new node data needs to be added at the beginning
+    // Based on the lexicographical order
+
+    if (head_->data_ > s)
+    {
+        newNode->next_ = head_;
+        head_ = newNode;
+        cout << "Data: " << s << " inserted" << "\n";
+        return true;
+    }
+
+    // Finding the correct position for string data lexicographically
+    Node *currentNode = head_;
+    while (currentNode->next_ != nullptr && currentNode->next_->data_ < s)
+    {
+        currentNode = currentNode->next_;
+    }
+    newNode->next_ = currentNode->next_;
+    currentNode->next_ = newNode;
+    cout << "Data: " << s << " inserted" << "\n";
 
     return false; // dummy
 }
