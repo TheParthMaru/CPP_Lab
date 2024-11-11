@@ -1,6 +1,7 @@
 #include "JumpList.h"
 #include <stdexcept>
 #include <iostream>
+
 using namespace std;
 
 // This is a constructor
@@ -76,35 +77,51 @@ JumpList::JumpList(int size, const string *arr)
 
 JumpList::~JumpList()
 {
-    // IMPLEMENT ME
+    Node *current = head_;
+    while (current != nullptr)
+    {
+        Node *next = current->next_;
+        delete current; // Delete the current node
+        current = next; // Move to the next node
+    }
 }
 
 int JumpList::size() const
 {
-    int counter = 0;
+    int size = 0;
 
     Node *currentNode = head_;
 
     while (currentNode != nullptr)
     {
-        ++counter;
+        ++size;
         currentNode = currentNode->next_;
     }
-
-    return counter; // dummy
+    // Added just for debugging
+    // cout << "Size: " << counter << endl;
+    return size; // dummy
 }
 
 // DONE FOR YOU, DO NOT CHANGE
 bool JumpList::find(const string &s) const
 {
-
+    // Added just for debugging
+    // cout << "Inside find()" << endl;
     if (head_ == nullptr)
+    {
+        // Added just for debugging
+        // cout << "Not found" << endl;
         return false;
+    }
 
     // moving along the fast lane
     Node *tmp = head_;
     while (tmp->jump_ != nullptr && tmp->jump_->data_ < s)
+    {
+        // Added just for debugging
+        // cout << "Still searching" << endl;
         tmp = tmp->jump_;
+    }
 
     // tmp now points to the jump node at the start of the segment where s could be
 
@@ -113,83 +130,344 @@ bool JumpList::find(const string &s) const
     {
 
         if (tmp->data_ == s)
+        {
+            // Added just for debugging
+            // cout << "Matched" << endl;
             return true; // match
+        }
         else if (tmp->data_ > s)
+        {
+            // Added just for debugging
+            // cout << "Not Matched" << endl;
             return false; // went past without finding s
+        }
         else
             tmp = tmp->next_;
     }
-
+    // Added just for debugging
+    // cout << "Not Matched" << endl;
     return false; // end of list
 }
 
 string JumpList::get(int i) const
 {
-    // IMPLEMENT ME
+    // Added just for debugging
+    // cout << "Inside get()" << endl;
+    if (i < 0 || i > size())
+    {
+        // Added just for debugging
+        // cout << "Not found" << endl;
+        return "";
+    }
 
-    return "nah"; // dummy
+    Node *currentNode = head_;
+    int index = 0;
+
+    while (index < i && currentNode != nullptr)
+    {
+        currentNode = currentNode->next_;
+        ++index;
+    }
+
+    if (currentNode != nullptr)
+    {
+        // Added just for debugging
+        // cout << "Found" << endl;
+        return currentNode->data_;
+    }
+    else
+    {
+        // Added just for debugging
+        // cout << "Not found" << endl;
+        return "";
+    }
 }
 
 string JumpList::print() const
 {
-    string result = "";
-    Node *currentNode = head_;
+    // If the list is empty, return two empty lines
+    if (!head_)
+        return "\n\n";
 
+    string result1 = ""; // For the regular list nodes
+    string result2 = ""; // For the jump nodes
+    string result3 = ""; // For the gaps between jump nodes
+
+    Node *currentNode = head_;
+    Node *jumpNode = head_;
+
+    // Line 1: Collect all nodes' data (regular list)
     while (currentNode != nullptr)
     {
-        result += currentNode->data_ + " ";
+        result1 += currentNode->data_ + " ";
         currentNode = currentNode->next_;
+    }
+
+    // Remove trailing space from result1
+    if (!result1.empty())
+    {
+        result1.pop_back();
+    }
+
+    // Line 2: Collect jump nodes' data
+    while (jumpNode != nullptr)
+    {
+        result2 += jumpNode->data_ + " ";
+        if (jumpNode->jump_)
+        {
+            jumpNode = jumpNode->jump_; // Move to the next jump node
+        }
+        else
+        {
+            break; // No more jump nodes
+        }
+    }
+
+    // Remove trailing space from result2
+    if (!result2.empty())
+    {
+        result2.pop_back();
+    }
+
+    // Line 3: Collect gaps between jump nodes
+    jumpNode = head_; // Reset to head to capture gap values
+    while (jumpNode != nullptr && jumpNode->jump_ != nullptr)
+    {
+        result3 += to_string(jumpNode->gap_) + " "; // Add the gap value
+        jumpNode = jumpNode->jump_;                 // Move to the next jump node
+    }
+
+    // After collecting jump nodes, handle the last node's gap
+    if (jumpNode != nullptr && jumpNode->jump_ == nullptr) // Last jump node
+    {
+        result3 += to_string(jumpNode->gap_) + " ";
+    }
+
+    // Remove trailing space from result3
+    if (!result3.empty())
+    {
+        result3.pop_back();
+    }
+
+    // Return the formatted result with newline-separated lines
+    return result1 + "\n" + result2 + "\n" + result3;
+}
+
+string JumpList::prettyPrint() const
+{
+    string result = "";
+    Node *current = head_;
+
+    // First, print the regular linked list nodes with " --> "
+    while (current != nullptr)
+    {
+        result += current->data_;
+
+        // Add " --> " if there's a next node
+        if (current->next_ != nullptr)
+            result += " --> ";
+
+        current = current->next_;
+    }
+
+    result += "\n";
+
+    // Now, print the jump nodes in the desired format with the gaps
+    current = head_;
+    Node *previousJumpNode = nullptr;
+
+    while (current != nullptr)
+    {
+        if (current->jump_ != nullptr)
+        {
+            // Print the jump node list on a new line
+            result += current->data_;
+            Node *jumpNode = current->jump_;
+            result += " ---------------------> " + jumpNode->data_;
+
+            int gap = 1;
+            Node *tempNode = jumpNode;
+            while (tempNode->next_ != nullptr)
+            {
+                tempNode = tempNode->next_;
+                gap++;
+                result += " --> " + tempNode->data_;
+            }
+
+            result += "\n";
+            result += to_string(gap); // Print the gap
+        }
+
+        current = current->next_;
     }
 
     return result;
 }
 
-string JumpList::prettyPrint() const
-{
-    // IMPLEMENT ME
-
-    return "nah"; // dummy
-}
-
 bool JumpList::insert(const string &s)
 {
-    Node *newNode = new Node(s, nullptr, nullptr, 0);
-
-    // If empty list, then we need to insert at head.
     if (head_ == nullptr)
     {
-        head_ = newNode;
-        std::cout << "Data: " << s << " inserted" << std::endl;
-        return true; // Because we were able to add.
-    }
-
-    // Checking if the new node data needs to be added at the beginning
-    // Based on the lexicographical order
-
-    if (head_->data_ > s)
-    {
-        newNode->next_ = head_;
-        head_ = newNode;
-        cout << "Data: " << s << " inserted" << "\n";
+        head_ = new Node(s, nullptr, nullptr, 1); // Initially set gap_ as 1 (head counts for itself)
         return true;
     }
 
-    // Finding the correct position for string data lexicographically
     Node *currentNode = head_;
-    while (currentNode->next_ != nullptr && currentNode->next_->data_ < s)
+    // Move to the correct position for insertion using the jump pointers
+    while (currentNode->jump_ != nullptr && currentNode->jump_->data_ < s)
     {
-        currentNode = currentNode->next_;
+        currentNode = currentNode->jump_;
     }
-    newNode->next_ = currentNode->next_;
-    currentNode->next_ = newNode;
-    cout << "Data: " << s << " inserted" << "\n";
 
-    return false; // dummy
+    Node *prev = nullptr;
+    Node *current = currentNode;
+    while (current != nullptr && current->data_ < s)
+    {
+        prev = current;
+        current = current->next_;
+    }
+
+    // When duplicate is matched, return false
+    if (current != nullptr && current->data_ == s)
+    {
+        return false;
+    }
+
+    // Insert the new node in the list
+    Node *newNode = new Node(s, current, nullptr, 0);
+    if (prev == nullptr)
+    {
+        head_ = newNode;
+    }
+    else
+    {
+        prev->next_ = newNode;
+    }
+
+    // Adjust jump nodes and gap values for the new node
+    Node *segmentStart = currentNode;
+    int segmentSize = 0;
+    while (segmentStart != nullptr && segmentSize < MAX_GAP_SIZE + 1)
+    {
+        segmentStart = segmentStart->next_;
+        segmentSize++;
+    }
+
+    if (segmentSize > MAX_GAP_SIZE)
+    {
+        int splitPoint = (segmentSize + 1) / 2;
+        Node *splitNode = currentNode;
+        for (int i = 1; i < splitPoint; i++)
+        {
+            splitNode = splitNode->next_;
+        }
+
+        currentNode->jump_ = splitNode;
+        currentNode->gap_ = splitPoint;
+
+        // Accumulate gap for the new jump node
+        splitNode->gap_ = segmentSize - splitPoint;
+
+        // Traverse from the current jump node to adjust gaps
+        Node *tempNode = currentNode;
+        while (tempNode != nullptr)
+        {
+            tempNode->gap_ += 1;
+            tempNode = tempNode->next_;
+        }
+    }
+
+    // After the insertion, adjust the gap for the last jump node (if any)
+    Node *jumpNode = head_;
+    while (jumpNode != nullptr && jumpNode->jump_ != nullptr)
+    {
+        // Calculate the gap for the last jump node
+        if (jumpNode->jump_->next_ == nullptr) // Last jump node
+        {
+            Node *lastJump = jumpNode->jump_;
+            int gapToEnd = 0;
+            while (lastJump != nullptr)
+            {
+                gapToEnd++;
+                lastJump = lastJump->next_;
+            }
+            jumpNode->gap_ = gapToEnd;
+        }
+        jumpNode = jumpNode->jump_; // Move to the next jump node
+    }
+
+    return true;
 }
 
 bool JumpList::erase(const string &s)
 {
-    // IMPLEMENT ME
+    if (head_ == nullptr)
+    {
+        return false; // Empty list, nothing to delete
+    }
 
-    return false; // dummy
+    Node *current = head_;
+    Node *prevNode = nullptr;
+    Node *prevJumpNode = nullptr;
+
+    // Traverse the list to find the node to delete
+    while (current != nullptr)
+    {
+        if (current->data_ == s)
+        {
+            break; // Found the node to delete
+        }
+
+        prevNode = current;
+        if (current->jump_)
+        {
+            prevJumpNode = current; // Update previous jump node
+        }
+        current = current->next_;
+    }
+
+    if (current == nullptr)
+    {
+        return false; // Node not found
+    }
+
+    // Case 1: If node is the head node
+    if (current == head_)
+    {
+        head_ = current->next_; // Move head to the next node
+        if (head_ != nullptr && head_->jump_ == nullptr)
+        {
+            head_->jump_ = head_->next_; // Make it a jump node if not already
+        }
+    }
+    else
+    {
+        // Case 2: Node is not the head
+        if (prevNode != nullptr)
+        {
+            prevNode->next_ = current->next_; // Skip the node to be deleted
+        }
+
+        // Case 3: If the node to be deleted is a jump node, update gap
+        if (current->jump_)
+        {
+            if (prevJumpNode != nullptr)
+            {
+                prevJumpNode->gap_ += current->gap_; // Merge the gap with previous jump node
+            }
+
+            // If the next node is also a jump node, merge the two segments
+            if (current->next_ != nullptr && current->next_->jump_)
+            {
+                Node *nextNode = current->next_;
+                prevJumpNode->next_ = nextNode;       // Skip over the current node
+                prevJumpNode->gap_ += nextNode->gap_; // Merge gaps
+            }
+        }
+    }
+
+    // Clean up memory of the deleted node
+    delete current;
+
+    return true;
 }
