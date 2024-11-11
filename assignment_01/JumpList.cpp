@@ -407,67 +407,90 @@ bool JumpList::erase(const string &s)
     }
 
     Node *current = head_;
-    Node *prevNode = nullptr;
-    Node *prevJumpNode = nullptr;
+    Node *prev = nullptr;
 
-    // Traverse the list to find the node to delete
-    while (current != nullptr)
+    // Locate the node to erase using the "fast lane"
+    while (current != nullptr && current->data_ != s)
     {
-        if (current->data_ == s)
-        {
-            break; // Found the node to delete
-        }
-
-        prevNode = current;
-        if (current->jump_)
-        {
-            prevJumpNode = current; // Update previous jump node
-        }
-        current = current->next_;
+        prev = current;
+        current = current->jump_; // Move via the jump pointer (fast lane)
     }
 
+    // If the node wasn't found, return false
     if (current == nullptr)
     {
-        return false; // Node not found
+        return false;
     }
 
-    // Case 1: If node is the head node
-    if (current == head_)
+    // Deleting a non-jump node
+    if (current->jump_ == nullptr)
     {
-        head_ = current->next_; // Move head to the next node
-        if (head_ != nullptr && head_->jump_ == nullptr)
+        if (prev == nullptr)
         {
-            head_->jump_ = head_->next_; // Make it a jump node if not already
+            // If the node is the head, just move the head to the next node
+            head_ = current->next_;
+        }
+        else
+        {
+            // Adjust the previous node's next_ pointer
+            prev->next_ = current->next_;
         }
     }
     else
     {
-        // Case 2: Node is not the head
-        if (prevNode != nullptr)
+        // Deleting a jump node - merge the two segments around it
+        if (prev == nullptr)
         {
-            prevNode->next_ = current->next_; // Skip the node to be deleted
+            // If the node is the head, set the next node as the new head
+            head_ = current->next_;
+            // Ensure the next node becomes a jump node (if not already)
+            if (head_ != nullptr && head_->jump_ == nullptr)
+            {
+                head_->jump_ = head_->next_; // Update jump pointer for the new head
+            }
+        }
+        else
+        {
+            // Merge the segments around the jump node
+            prev->jump_ = current->jump_; // Link the previous segment to the jump segment
         }
 
-        // Case 3: If the node to be deleted is a jump node, update gap
-        if (current->jump_)
+        // Adjust gap size if necessary
+        if (current->next_ != nullptr && current->next_->jump_ != nullptr)
         {
-            if (prevJumpNode != nullptr)
-            {
-                prevJumpNode->gap_ += current->gap_; // Merge the gap with previous jump node
-            }
-
-            // If the next node is also a jump node, merge the two segments
-            if (current->next_ != nullptr && current->next_->jump_)
-            {
-                Node *nextNode = current->next_;
-                prevJumpNode->next_ = nextNode;       // Skip over the current node
-                prevJumpNode->gap_ += nextNode->gap_; // Merge gaps
-            }
+            current->next_->gap_--;
         }
     }
 
-    // Clean up memory of the deleted node
+    // Release the memory of the current node
     delete current;
+
+    // Now adjust jump nodes and potentially split if the new segment is too big
+    Node *segmentStart = head_;
+    int segmentSize = 0;
+
+    // Traverse to determine the segment size after the removal
+    while (segmentStart != nullptr)
+    {
+        segmentStart = segmentStart->next_;
+        segmentSize++;
+    }
+
+    // If the segment is too large, split it as needed (split if segmentSize > MAX_GAP_SIZE)
+    if (segmentSize > MAX_GAP_SIZE)
+    {
+        Node *splitNode = head_;
+        int splitPoint = segmentSize / 2;
+
+        for (int i = 0; i < splitPoint; i++)
+        {
+            splitNode = splitNode->next_;
+        }
+
+        head_->jump_ = splitNode; // Update the jump pointer
+        head_->gap_ = splitPoint;
+        splitNode->gap_ = segmentSize - splitPoint;
+    }
 
     return true;
 }
