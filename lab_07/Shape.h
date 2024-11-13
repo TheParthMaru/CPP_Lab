@@ -54,6 +54,10 @@ public:
 private:
 	// TODO:
 	// Add private (or protected?) members.
+    private:
+        string borderColor;
+        bool fill;
+        string fillColor;
 
 };
 

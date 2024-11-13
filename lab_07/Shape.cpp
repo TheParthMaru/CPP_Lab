@@ -9,7 +9,9 @@
 using std::string;
 
 Shape::Shape(const string& borderColor, bool fill, const string& fillColor) {
-	// TODO: implement me
+	this->borderColor = borderColor;
+    this->fill = fill;
+    this->fillColor = fillColor;
 }
 
 string Shape::borderColor() const {
